@@ -7,7 +7,7 @@
       http-equiv="Content-Security-Policy"
       content="script-src 'self' 'unsafe-inline'"
     />
-    <link rel="stylesheet" href="css/all.min.css">
+    <link rel="stylesheet" href="css/all.min.css" />
     <link rel="stylesheet" href="css/style.css" />
     <title>SysTop | Monitor your CPU</title>
   </head>
@@ -42,13 +42,13 @@
         <form id="settings-form">
           <div class="form-control">
             <label for="cpu-overload">CPU Overload Warning %</label>
-            <input type="number" id="cpu-overload">
+            <input type="number" id="cpu-overload" />
           </div>
           <div class="form-control">
             <label for="alert-frequency">Alert Frequency (In Minutes)</label>
-            <input type="number" id="alert-frequency">
+            <input type="number" id="alert-frequency" />
           </div>
-          <input type="submit" value="Save" class="btn">
+          <input type="submit" value="Save" class="btn" />
         </form>
       </div>
     </main>
@@ -72,5 +72,39 @@
 
     <script src="js/tabs.js"></script>
     <script src="js/monitor.js"></script>
+    <script>
+      const settingsForm = document.getElementById('settings-form');
+      // Get settings
+      ipcRenderer.on('settings:get', (e, settings) => {
+        document.getElementById('cpu-overload').value = settings.cpuOverload;
+        document.getElementById('alert-frequency').value =
+          settings.alertFrequency;
+      });
+
+      // Submit settings
+      settingsForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const cpuOverload = document.getElementById('cpu-overload').value;
+        const alertFrequency = document.getElementById('alert-frequency').value;
+
+        // Send new settings to main process
+        ipcRenderer.send('settings:set', {
+          cpuOverload,
+          alertFrequency,
+        });
+
+        showAlert('Settings Saved');
+      });
+
+      // Show alert for settings
+      function showAlert(msg) {
+        const alert = document.getElementById('alert');
+        alert.classList.remove('hide');
+        alert.classList.add('alert');
+        alert.innerText = msg;
+
+        setTimeout(() => alert.classList.add('hide'), 3000);
+      }
+    </script>
   </body>
 </html>
