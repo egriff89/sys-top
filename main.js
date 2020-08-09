@@ -1,14 +1,16 @@
-const { app, BrowserWindow, Menu, ipcMain } = require('electron');
+const path = require('path');
+const { app, BrowserWindow, Menu, ipcMain, Tray } = require('electron');
 const log = require('electron-log');
 const Store = require('./Store');
 
 // Set env
-process.env.NODE_ENV = 'production';
+process.env.NODE_ENV = 'development';
 
-const isDev = process.env.NODE_ENV !== 'development' ? true : false;
+const isDev = process.env.NODE_ENV === 'development' ? true : false;
 const isMac = process.platform === 'darwin' ? true : false;
 
 let mainWindow;
+let tray;
 
 // Init store and defaults
 const store = new Store({
@@ -28,8 +30,10 @@ function createMainWindow() {
     height: 500,
     icon: `${__dirname}/assets/icons/icon.png`,
     resizable: isDev,
+    opacity: 0.9,
     webPreferences: {
       nodeIntegration: true,
+      enableRemoteModule: true,
     },
   });
 
@@ -49,6 +53,43 @@ app.on('ready', () => {
 
   const mainMenu = Menu.buildFromTemplate(menu);
   Menu.setApplicationMenu(mainMenu);
+
+  mainWindow.on('close', (e) => {
+    if (!app.isQuitting) {
+      e.preventDefault();
+      mainWindow.hide();
+    }
+    return true;
+  });
+
+  const icon = path.join(__dirname, 'assets', 'icons', 'tray_icon.png');
+
+  // Create tray
+  tray = new Tray(icon);
+
+  tray.on('click', () => {
+    if (mainWindow.isVisible() === true) {
+      mainWindow.hide();
+    } else {
+      mainWindow.show();
+    }
+  });
+
+  tray.on('right-click', () => {
+    // Create context menu when right-clicking on task icon
+    const contextMenu = Menu.buildFromTemplate([
+      {
+        label: 'Quit',
+        click: () => {
+          app.isQuitting = true;
+          app.quit();
+        },
+      },
+    ]);
+
+    // Show context menu
+    tray.popUpContextMenu(contextMenu);
+  });
 });
 
 const menu = [
@@ -56,15 +97,31 @@ const menu = [
   {
     role: 'fileMenu',
   },
+  {
+    label: 'View',
+    submenu: [
+      {
+        label: 'Toggle Navigation',
+        click: () => mainWindow.send('nav:toggle'),
+      },
+    ],
+  },
+  {
+    role: 'editMenu',
+  },
+  {
+    label: 'Options',
+    submenu: [{ role: 'reload' }, { role: 'forceReload' }],
+  },
   ...(isDev
     ? [
         {
           label: 'Developer',
           submenu: [
             { role: 'reload' },
-            { role: 'forcereload' },
+            { role: 'forceReload' },
             { type: 'separator' },
-            { role: 'toggledevtools' },
+            { role: 'toggleDevTools' },
           ],
         },
       ]
