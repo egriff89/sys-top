@@ -3,6 +3,7 @@ const { app, Menu, ipcMain } = require('electron');
 const Store = require('./Store');
 const MainWindow = require('./MainWindow');
 const AppTray = require('./AppTray');
+const { platform } = require('os');
 
 // Set env
 const env = process.env.NODE_ENV;
@@ -39,9 +40,11 @@ app.on('ready', () => {
   Menu.setApplicationMenu(mainMenu);
 
   mainWindow.on('close', (e) => {
-    if (!app.isQuitting) {
-      e.preventDefault();
-      mainWindow.hide();
+    if (!isMac) {
+      if (!app.isQuitting) {
+        e.preventDefault();
+        mainWindow.hide();
+      }
     }
     return true;
   });
