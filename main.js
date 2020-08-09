@@ -1,7 +1,8 @@
 const path = require('path');
-const { app, BrowserWindow, Menu, ipcMain, Tray } = require('electron');
-const log = require('electron-log');
+const { app, Menu, ipcMain } = require('electron');
 const Store = require('./Store');
+const MainWindow = require('./MainWindow');
+const AppTray = require('./AppTray');
 
 // Set env
 process.env.NODE_ENV = 'development';
@@ -24,24 +25,7 @@ const store = new Store({
 });
 
 function createMainWindow() {
-  mainWindow = new BrowserWindow({
-    title: 'SysTop',
-    width: isDev ? 800 : 355,
-    height: 500,
-    icon: `${__dirname}/assets/icons/icon.png`,
-    resizable: isDev,
-    opacity: 0.9,
-    webPreferences: {
-      nodeIntegration: true,
-      enableRemoteModule: true,
-    },
-  });
-
-  if (isDev) {
-    mainWindow.webContents.openDevTools();
-  }
-
-  mainWindow.loadFile(`${__dirname}/app/index.html`);
+  mainWindow = new MainWindow(`${__dirname}/app/index.html`, isDev);
 }
 
 app.on('ready', () => {
@@ -65,31 +49,7 @@ app.on('ready', () => {
   const icon = path.join(__dirname, 'assets', 'icons', 'tray_icon.png');
 
   // Create tray
-  tray = new Tray(icon);
-
-  tray.on('click', () => {
-    if (mainWindow.isVisible() === true) {
-      mainWindow.hide();
-    } else {
-      mainWindow.show();
-    }
-  });
-
-  tray.on('right-click', () => {
-    // Create context menu when right-clicking on task icon
-    const contextMenu = Menu.buildFromTemplate([
-      {
-        label: 'Quit',
-        click: () => {
-          app.isQuitting = true;
-          app.quit();
-        },
-      },
-    ]);
-
-    // Show context menu
-    tray.popUpContextMenu(contextMenu);
-  });
+  tray = new AppTray(icon, mainWindow);
 });
 
 const menu = [
@@ -141,7 +101,7 @@ app.on('window-all-closed', () => {
 });
 
 app.on('activate', () => {
-  if (BrowserWindow.getAllWindows().length === 0) {
+  if (MainWindow.getAllWindows().length === 0) {
     createMainWindow();
   }
 });
