@@ -3,7 +3,6 @@ const { app, Menu, ipcMain } = require('electron');
 const Store = require('./Store');
 const MainWindow = require('./MainWindow');
 const AppTray = require('./AppTray');
-const { platform } = require('os');
 
 // Set env
 const env = process.env.NODE_ENV;
